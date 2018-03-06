@@ -54,7 +54,7 @@ class HttpApi():
     def http_post(self, url, args):
         token = self.get_token()
         if not isinstance(token, dict):
-            url = url.replace("ACCESS_TOKEN", token)
+            url = url.replace("ACCESS_TOKEN", self.get_token())
             ret = requests.post(url, data=json.dumps(args).encode('utf8')).json()
             if ret["errcode"] == 42001:
                 self.refresh_token()
