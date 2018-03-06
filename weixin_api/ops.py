@@ -1,5 +1,5 @@
-import conf
-from http_url import HttpApi
+from . import conf
+from .http_url import HttpApi
 
 
 corpid = conf.corpid
