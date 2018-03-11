@@ -33,6 +33,7 @@ class HttpApi():
 
     def refresh_token(self):
         self.token = None
+        return self.get_token()
         
     def http_call(self, url_type, args=None):
         url = base_url + URL_TYPE[url_type][0]
@@ -54,11 +55,11 @@ class HttpApi():
     def http_post(self, url, args):
         token = self.get_token()
         if not isinstance(token, dict):
-            url = url.replace("ACCESS_TOKEN", self.get_token())
-            ret = requests.post(url, data=json.dumps(args).encode('utf8')).json()
+            whole_url = url.replace("ACCESS_TOKEN", token)
+            ret = requests.post(whole_url, data=json.dumps(args).encode('utf8')).json()
             if ret["errcode"] == 42001:
-                self.refresh_token()
-                return requests.post(url, data=json.dumps(args).encode('utf8')).json()
+                whole_url = url.replace("ACCESS_TOKEN", self.refresh_token())
+                return requests.post(whole_url, data=json.dumps(args).encode('utf8')).json()
             else:
                 return ret
         else:
