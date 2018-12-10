@@ -6,6 +6,7 @@ import json
 base_url = "https://qyapi.weixin.qq.com"
 URL_TYPE = {
     "SEND_MESSAGE" : ["/cgi-bin/message/send?access_token=ACCESS_TOKEN", "POST"],
+    "UPLOAD_TMP_IMAGE" : ["/cgi-bin/media/upload?access_token=ACCESS_TOKEN&type=image", "POST"],
     "ACCESS_TOKEN" : ["/cgi-bin/gettoken", "GET"]
 }
 
@@ -22,7 +23,7 @@ class HttpApi():
                 "corpid": self.corpid,
                 "corpsecret": self.secret
             }
-            ret = self.http_call("ACCESS_TOKEN", args)
+            ret = self.http_call("ACCESS_TOKEN", **args)
             if ret["errcode"] == 0:
                 self.token = ret["access_token"]
                 return self.token
@@ -35,7 +36,7 @@ class HttpApi():
         self.token = None
         return self.get_token()
         
-    def http_call(self, url_type, args=None):
+    def http_call(self, url_type, **args):
         url = base_url + URL_TYPE[url_type][0]
         method = URL_TYPE[url_type][1]
         if method == "GET":
@@ -43,7 +44,7 @@ class HttpApi():
         if method == "POST":
             return self.http_post(url, args)
 
-    def http_get(self, url, args=None):
+    def http_get(self, url, args):
         if isinstance(args, dict):
             for k,v in args.items():
                 if "?" in url:
@@ -53,13 +54,18 @@ class HttpApi():
         return requests.get(url).json()
 
     def http_post(self, url, args):
+        headers = args.get('headers', None)
+        files = args.get('files', None)
+        data = args.get('data', None)
+        if data:
+            data = json.dumps(data).encode('utf8')
         token = self.get_token()
         if not isinstance(token, dict):
             whole_url = url.replace("ACCESS_TOKEN", token)
-            ret = requests.post(whole_url, data=json.dumps(args).encode('utf8')).json()
+            ret = requests.post(whole_url, headers=headers, data=data, files=files).json()
             if ret["errcode"] == 42001:
                 whole_url = url.replace("ACCESS_TOKEN", self.refresh_token())
-                return requests.post(whole_url, data=json.dumps(args).encode('utf8')).json()
+                return requests.post(whole_url, headers=headers, data=data, files=files).json()
             else:
                 return ret
         else:
